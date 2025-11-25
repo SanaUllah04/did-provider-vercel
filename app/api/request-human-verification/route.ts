@@ -1,6 +1,6 @@
 // app/api/request-human-verification/route.ts
 import { NextResponse } from 'next/server';
-import { generatePuzzle } from '@/lib/puzzle';
+import { generatePuzzle } from '../../../lib/puzzle';
 import { kv } from '@vercel/kv';
 
 export async function POST() {  // No input needed now, since internal
