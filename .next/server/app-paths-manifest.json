@@ -1,6 +1,0 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/api/request-human-verification/route": "app/api/request-human-verification/route.js",
-  "/signup/page": "app/signup/page.js"
-}

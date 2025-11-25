@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Free Movie Online 🎬</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <h1>Free Movie Online 🎬</h1>
+      <p class="tagline">Watch free movies — authenticate with DID</p>
+    </header>
+
+    <main class="card" id="homeScreen">
+      <h2>Sign in / Sign up</h2>
+
+      <div class="socials">
+        <button class="btn btn-social">Continue with Google</button>
+        <button class="btn btn-social">Continue with Facebook</button>
+        <button class="btn btn-social">Continue with Apple ID</button>
+      </div>
+
+      <div class="divider"><span>or</span></div>
+
+      <div class="actions">
+        <button id="signupDidBtn" class="btn btn-primary">Sign up with DID</button>
+        <button id="loginDidBtn" class="btn btn-outline">Login with DID</button>
+      </div>
+
+      <p class="legal">No personal data stored — DID-based auth.</p>
+    </main>
+
+    <!-- Verification / DID Flow -->
+    <main class="card screen" id="verificationScreen" style="display:none;">
+      <button class="back" id="backFromVerify">← Back</button>
+      <h2>Human Verification</h2>
+      <p class="muted">Complete these steps to prove you're human and generate a DID.</p>
+
+      <div id="progressBar" class="progress-bar"><div id="progressFill"></div></div>
+      <div id="dots" class="dots"></div>
+
+      <section id="ch-1" class="challenge active">
+        <h3>1/5 Movement Fluidity</h3>
+        <p>Move your cursor inside the box for 3 seconds.</p>
+        <div id="mouseTarget" class="mouse-target">Move cursor here</div>
+        <p id="mouseStatus" class="small muted">Awaiting movement...</p>
+      </section>
+
+      <section id="ch-2" class="challenge">
+        <h3>2/5 Typing Rhythm</h3>
+        <p>Type exactly: <code id="phrase">The quick brown fox</code></p>
+        <input id="typingInput" type="text" placeholder="Type here..." />
+        <p id="typingStatus" class="small muted">Start typing...</p>
+      </section>
+
+      <section id="ch-3" class="challenge">
+        <h3>3/5 Simple Math</h3>
+        <p id="mathQuestion" class="muted"></p>
+        <div id="mathButtons" class="math-buttons"></div>
+      </section>
+
+      <section id="ch-4" class="challenge">
+        <h3>4/5 Time Delay</h3>
+        <p>Wait until timer hits 5.00s then press Continue.</p>
+        <div id="timerDisplay" class="timer">0.00s</div>
+        <button id="timeButton" class="btn" disabled>Continue</button>
+      </section>
+
+      <section id="ch-5" class="challenge">
+        <h3>5/5 Final Verification</h3>
+        <p>Click the visible button (do not click hidden trap).</p>
+        <button id="finalSubmit" class="btn btn-primary">Submit Final Verification</button>
+        <button id="hiddenTrap" style="display:none">Hidden Trap</button>
+      </section>
+
+      <div class="controls">
+        <button id="nextBtn" class="btn btn-primary" style="display:none;">Next →</button>
+      </div>
+    </main>
+
+    <!-- Result screen -->
+    <main class="card screen" id="resultScreen" style="display:none;">
+      <h2 id="resultHeader"></h2>
+      <p id="resultText" class="muted"></p>
+
+      <div id="successArea" style="display:none;">
+        <div class="logbox">
+          <h4>Generation steps</h4>
+          <pre id="genLog" class="log"></pre>
+        </div>
+
+        <div class="did-block">
+          <strong>Your DID</strong>
+          <div id="didValue" class="did-display"></div>
+        </div>
+
+        <p class="muted">DID will be stored on the server (local file). You will be returned to home in 5 seconds.</p>
+      </div>
+
+      <div id="failArea" style="display:none;">
+        <div class="error">Verification failed — you must pass 4/5 checks.</div>
+        <button id="retryBtn" class="btn btn-primary">Try Again</button>
+      </div>
+    </main>
+
+    <!-- Login with DID -->
+    <main class="card screen" id="loginScreen" style="display:none;">
+      <button class="back" id="backFromLogin">← Back</button>
+      <h2>Login with DID</h2>
+      <p class="muted">Enter your DID to login.</p>
+
+      <input id="loginDidInput" placeholder="did:human:..." />
+      <button id="loginSubmit" class="btn btn-primary">Login</button>
+
+      <div id="loginMsg" class="muted"></div>
+    </main>
+
+    <!-- Dashboard (movies) -->
+    <main class="card screen" id="dashboardScreen" style="display:none;">
+      <h2>🎬 Movie Dashboard</h2>
+      <p class="muted">Welcome — you are authenticated with DID.</p>
+      <div class="did-block small">
+        <strong>Your DID:</strong> <span id="dashboardDid"></span>
+      </div>
+
+      <div class="movies">
+        <div class="movie">Movie 1 (sample)</div>
+        <div class="movie">Movie 2 (sample)</div>
+      </div>
+
+      <button id="logoutBtn" class="btn btn-outline">Logout</button>
+    </main>
+
+    <footer class="site-footer">
+      <small>Demo — Free Movie Online</small>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
