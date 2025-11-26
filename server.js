@@ -75,6 +75,12 @@ app.post('/verify-did', async (req, res) => {
   try {
     const { did, challenge, signature, publicKey } = req.body;
 
+    console.log('--- Verification Request ---');
+    console.log('DID:', did);
+    console.log('Challenge received:', challenge ? 'YES' : 'NO');
+    console.log('Signature received:', signature ? 'YES' : 'NO');
+    console.log('PublicKey received:', publicKey ? 'YES' : 'NO');
+
     if (!did) {
       return res.json({ exists: false, signatureValid: false, message: 'No DID provided' });
     }
@@ -102,21 +108,29 @@ app.post('/verify-did', async (req, res) => {
       return res.json({ exists: false, signatureValid: false });
     }
 
+    console.log('✓ DID found in file');
+
     // Verify signature if provided
     if (challenge && signature && publicKey) {
+      console.log('→ Starting signature verification...');
       const isValid = await verifySignature(challenge, signature, publicKey);
       
       if (isValid) {
-        console.log(`✓ DID verified with valid signature: ${did}`);
+        console.log(`✓ DID verified with VALID signature: ${did}`);
         return res.json({ exists: true, signatureValid: true });
       } else {
-        console.log(`✗ Invalid signature for DID: ${did}`);
+        console.log(`✗ INVALID signature for DID: ${did}`);
         return res.json({ exists: true, signatureValid: false });
       }
+    } else {
+      console.log('⚠ Warning: Signature verification skipped - missing data');
+      console.log('  Challenge:', !!challenge);
+      console.log('  Signature:', !!signature);
+      console.log('  PublicKey:', !!publicKey);
     }
 
     // If no signature provided, just check existence
-    console.log(`✓ DID exists: ${did}`);
+    console.log(`✓ DID exists (no signature verification): ${did}`);
     res.json({ exists: true, signatureValid: false });
 
   } catch (error) {
@@ -128,27 +142,56 @@ app.post('/verify-did', async (req, res) => {
 // Verify ECDSA signature
 async function verifySignature(challenge, signatureBase64, publicKeyJwk) {
   try {
-    // Convert base64 signature to buffer
-    const signatureBuffer = Buffer.from(signatureBase64, 'base64');
+    console.log('→ Verifying signature...');
+    console.log('  Challenge:', challenge);
+    console.log('  Signature (base64):', signatureBase64.substring(0, 50) + '...');
+    console.log('  Public Key JWK:', JSON.stringify(publicKeyJwk));
 
-    // Create verify object
+    // Import public key from JWK
+    const { default: crypto } = await import('crypto');
+    
+    // Convert JWK coordinates from base64url to Buffer
+    const xBuffer = Buffer.from(publicKeyJwk.x, 'base64url');
+    const yBuffer = Buffer.from(publicKeyJwk.y, 'base64url');
+    
+    console.log('  X coordinate length:', xBuffer.length);
+    console.log('  Y coordinate length:', yBuffer.length);
+
+    // Create public key in SPKI format for P-256
+    const publicKeyObject = crypto.createPublicKey({
+      key: {
+        kty: 'EC',
+        crv: 'P-256',
+        x: publicKeyJwk.x,
+        y: publicKeyJwk.y
+      },
+      format: 'jwk'
+    });
+
+    console.log('  Public key object created');
+
+    // Convert signature from base64 to buffer
+    const signatureBuffer = Buffer.from(signatureBase64, 'base64');
+    console.log('  Signature buffer length:', signatureBuffer.length);
+
+    // Verify the signature
     const verify = crypto.createVerify('SHA256');
     verify.update(challenge);
+    verify.end();
 
-    // Convert JWK to PEM format
-    const publicKeyPem = jwkToPem(publicKeyJwk);
-
-    // Verify signature
-    const isValid = verify.verify(publicKeyPem, signatureBuffer);
+    const isValid = verify.verify(publicKeyObject, signatureBuffer);
     
+    console.log('  Verification result:', isValid);
     return isValid;
+
   } catch (error) {
-    console.error('Signature verification error:', error);
+    console.error('❌ Signature verification error:', error.message);
+    console.error('   Stack:', error.stack);
     return false;
   }
 }
 
-// Convert JWK to PEM format for crypto verification
+// Convert JWK to PEM format for crypto verification (DEPRECATED - kept for reference)
 function jwkToPem(jwk) {
   // For P-256 curve
   const x = Buffer.from(base64UrlDecode(jwk.x), 'hex');

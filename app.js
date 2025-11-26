@@ -51,23 +51,63 @@ document.addEventListener('DOMContentLoaded', () => {
     $('loginMsg').style.color = '#6b7280';
     
     try {
-      // Check DID against DID File.txt on server
+      // Step 1: Check if keypair exists locally
+      const keyData = localStorage.getItem(`did_keypair_${did}`);
+      
+      console.log('--- Login Debug ---');
+      console.log('DID:', did);
+      console.log('Keypair found:', !!keyData);
+      
+      if (!keyData) {
+        $('loginMsg').textContent = 'DID not found in this browser. Please register first.';
+        $('loginMsg').style.color = '#b91c1c';
+        return;
+      }
+
+      const { publicKey, privateKey } = JSON.parse(keyData);
+      console.log('Public key:', publicKey);
+      console.log('Private key exists:', !!privateKey);
+      
+      // Step 2: Create a challenge signature to prove ownership
+      $('loginMsg').textContent = 'Creating cryptographic signature...';
+      const challenge = `login-${did}-${Date.now()}`;
+      console.log('Challenge:', challenge);
+      
+      const signature = await signChallenge(challenge, privateKey);
+      console.log('Signature created:', signature ? 'YES' : 'NO');
+      console.log('Signature length:', signature ? signature.length : 0);
+      
+      // Step 3: Verify DID and signature on server
+      $('loginMsg').textContent = 'Verifying signature with server...';
+      
+      const payload = { 
+        did,
+        challenge,
+        signature,
+        publicKey
+      };
+      console.log('Sending to server:', payload);
+      
       const res = await fetch('/verify-did', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ did })
+        body: JSON.stringify(payload)
       });
       
       const result = await res.json();
+      console.log('Server response:', result);
       
-      if (result.exists) {
-        $('loginMsg').textContent = 'DID verified! Logging in...';
+      if (result.exists && result.signatureValid) {
+        $('loginMsg').textContent = 'DID and signature verified! Logging in...';
         $('loginMsg').style.color = '#059669';
         
         setTimeout(() => {
           $('dashboardDid').textContent = did;
           show('dashboardScreen');
         }, 800);
+      } else if (result.exists && !result.signatureValid) {
+        $('loginMsg').textContent = 'Invalid signature! You do not own this DID.';
+        $('loginMsg').style.color = '#b91c1c';
       } else {
         $('loginMsg').textContent = 'DID not found in DID File.txt. Please register first.';
         $('loginMsg').style.color = '#b91c1c';
@@ -75,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       $('loginMsg').textContent = 'Cannot connect to server. Please ensure server is running.';
       $('loginMsg').style.color = '#b91c1c';
-      console.error(e);
+      console.error('Login error:', e);
     }
   });
 
@@ -365,6 +405,93 @@ function analyzeInteractionPattern(duration) {
   const variance = velocities.reduce((sum, v) => sum + Math.pow(v - avgVel, 2), 0) / velocities.length;
   
   return variance > 0.01; // Sufficient variation indicates human
+}
+
+/* ---------- Cryptographic Signature Functions ---------- */
+async function signChallenge(challenge, privateKeyJwk) {
+  try {
+    console.log('→ Creating signature...');
+    console.log('  Challenge:', challenge);
+    
+    // Import private key
+    const privateKey = await crypto.subtle.importKey(
+      'jwk',
+      privateKeyJwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+
+    console.log('  Private key imported');
+
+    // Sign the challenge
+    const encoder = new TextEncoder();
+    const data = encoder.encode(challenge);
+    const signatureBuffer = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      privateKey,
+      data
+    );
+
+    console.log('  Signature buffer length:', signatureBuffer.byteLength);
+
+    // WebCrypto returns signature in IEEE P1363 format (r || s)
+    // Node.js crypto expects DER format, so we need to convert
+    const signature = new Uint8Array(signatureBuffer);
+    
+    // For P-256, r and s are each 32 bytes
+    const r = signature.slice(0, 32);
+    const s = signature.slice(32, 64);
+    
+    // Convert to DER format
+    const derSignature = toDER(r, s);
+    
+    // Convert to base64 for transmission
+    const signatureBase64 = btoa(String.fromCharCode(...derSignature));
+    
+    console.log('  Signature (DER base64):', signatureBase64.substring(0, 50) + '...');
+    
+    return signatureBase64;
+  } catch (error) {
+    console.error('Error signing challenge:', error);
+    throw error;
+  }
+}
+
+// Convert IEEE P1363 signature to DER format
+function toDER(r, s) {
+  // Encode an integer in DER format
+  function encodeInteger(value) {
+    // Remove leading zeros, but keep at least one byte
+    let start = 0;
+    while (start < value.length - 1 && value[start] === 0 && value[start + 1] < 0x80) {
+      start++;
+    }
+    
+    let trimmed = value.slice(start);
+    
+    // Add leading zero if high bit is set (to keep number positive)
+    if (trimmed[0] >= 0x80) {
+      trimmed = new Uint8Array([0, ...trimmed]);
+    }
+    
+    // INTEGER tag (0x02), length, then value
+    return new Uint8Array([0x02, trimmed.length, ...trimmed]);
+  }
+  
+  const rDER = encodeInteger(r);
+  const sDER = encodeInteger(s);
+  
+  // SEQUENCE tag (0x30), total length, then r and s
+  const totalLength = rDER.length + sDER.length;
+  const result = new Uint8Array([0x30, totalLength, ...rDER, ...sDER]);
+  
+  console.log('  DER encoding:');
+  console.log('    R length:', rDER.length - 2, 'bytes');
+  console.log('    S length:', sDER.length - 2, 'bytes');
+  console.log('    Total DER length:', result.length, 'bytes');
+  
+  return result;
 }
 
 /* ---------- Results & DID generation ---------- */
