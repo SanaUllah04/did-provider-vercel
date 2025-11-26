@@ -2,3 +2,5 @@ did:human:fbf776492e5e474737a1
 did:human:2790f4e9fcdeea0904a4
 did:human:99c85a4b40fd5e5ca010
 did:human:24b5bc898f92503e5a47
+{"did":"did:human:db5ee5643e84e72857cd","publicKey":{"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","x":"7CeeRm0u3oKW6YndGCFTq6zkrsyJZO_GOTNTZk21lLk","y":"g7JqXlTGhouE2r5pPShXv03cdmUnmlalxAqMp6mgYhU"},"timestamp":1764121898738}
+{"did":"did:human:badde0d887e34b9c26e6","publicKey":{"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","x":"po2FRKbIy8zzBJDQ_JLI3NUuzX9v2j48AnNEOPzAOIA","y":"swALYi_u1g5CVvMCdSxyny_e5345-iLGqPfZEyZ45NA"},"timestamp":1764121951864}

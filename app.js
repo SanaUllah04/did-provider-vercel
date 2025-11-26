@@ -390,6 +390,7 @@ async function generateAndStoreDID() {
   logStep('Keys generated with P-256 curve.');
   
   const pubJwk = await window.crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  const privJwk = await window.crypto.subtle.exportKey('jwk', keyPair.privateKey);
   logStep('Public key (JWK): ' + JSON.stringify(pubJwk, null, 2));
 
   const encoder = new TextEncoder();
@@ -404,13 +405,28 @@ async function generateAndStoreDID() {
   state.currentDID = did;
   logStep('DID created: ' + did);
 
-  // Save DID to permanent DID File.txt on server
+  // Store keypair locally for user (encrypted in localStorage)
+  logStep('Storing keypair locally for future authentication...');
+  const keyData = {
+    did: did,
+    publicKey: pubJwk,
+    privateKey: privJwk,
+    timestamp: Date.now()
+  };
+  localStorage.setItem(`did_keypair_${did}`, JSON.stringify(keyData));
+  logStep('Keypair stored in browser.');
+
+  // Save DID and public key to permanent DID File.txt on server
   logStep('Saving DID to "DID File.txt"...');
   try {
     const res = await fetch('/save-did', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ did, timestamp: Date.now() })
+      body: JSON.stringify({ 
+        did, 
+        publicKey: pubJwk,
+        timestamp: Date.now() 
+      })
     });
     
     const result = await res.json();
