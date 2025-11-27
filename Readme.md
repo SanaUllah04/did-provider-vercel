@@ -2,9 +2,7 @@
 
 A secure, decentralized identity (DID) authentication system with advanced CAPTCHA verification and cryptographic signature validation.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)
-![Status](https://img.shields.io/badge/status-active-success.svg)
+![Web UI](./Images/DID_provider.png)
 
 ---
 
@@ -122,6 +120,8 @@ did-auth-system/
 ---
 
 ## 🔒 Security Architecture
+
+![DID Providing Sequence](/Images/DID%20Archietecture.jpeg)
 
 ### Cryptographic Flow
 
